@@ -16,27 +16,27 @@ NEWSPAPERS_CONFIG = [
     {
         "name": "Hindustan Times",
         "url": "https://epaperwave.com/hindustan-times-epaper-pdf-today/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Hindustan_Times_logo.svg/1280px-Hindustan_Times_logo.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Hindustan_Times_logo.svg"
     },
     {
         "name": "The Times of India",
         "url": "https://epaperwave.com/the-times-of-india-epaper-pdf-download/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Times_of_India_logo.svg/1920px-Times_of_India_logo.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/7/7a/The_times_of_india.svg"
     },
     {
         "name": "The Mint",
         "url": "https://epaperwave.com/download-the-mint-epaper-pdf-for-free-today/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/The_Mint_logo.svg/1280px-The_Mint_logo.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Mint_%28newspaper%29_logo.svg"
     },
     {
         "name": "Dainik Bhaskar",
         "url": "https://epaperwave.com/dainik-bhaskar-epaper-today-pdf/",
-        "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Dainik_Bhaskar_logo.svg/1280px-Dainik_Bhaskar_logo.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/3/37/Dainik_Bhaskar_Logo.svg"
     },
     {
         "name": "Punjab Kesari",
         "url": "https://epaperwave.com/free-punjab-kesari-epaper-pdf-download-now/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/2/25/Punjab_Kesari_logo.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/PKD2.jpg/330px-PKD2.jpg"
     }
 ]
 
