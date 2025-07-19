@@ -1,9 +1,9 @@
 name: Daily e-Paper Email
 
 on:
-  workflow_dispatch: # Allows you to run it manually from the Actions tab
+  workflow_dispatch:
   schedule:
-    # Runs at 02:30 UTC every day (which is 8:00 AM IST)
+    # Runs at 02:30 UTC every day (8:00 AM IST)
     - cron: '30 2 * * *'
 
 jobs:
@@ -27,11 +27,10 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install selenium beautifulsoup4
+          pip install -r requirements.txt
 
       - name: Run the scraping and email script
         env:
-          # This securely uses the secrets you'll add to your GitHub repository
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           SENDER_APP_PASSWORD: ${{ secrets.SENDER_APP_PASSWORD }}
           RECIPIENTS: ${{ secrets.RECIPIENTS }}

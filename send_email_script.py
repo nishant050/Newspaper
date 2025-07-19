@@ -1,3 +1,5 @@
+
+
 import os
 import smtplib
 from email.mime.text import MIMEText
@@ -11,7 +13,7 @@ import time
 import concurrent.futures
 
 # --- Configuration ---
-# We define the newspapers here, now including their logo URLs
+
 NEWSPAPERS_CONFIG = [
     {
         "name": "Hindustan Times",
@@ -89,7 +91,6 @@ def find_all_newspapers(target_date):
 # --- Email Function ---
 def send_email(recipients, found_papers, paper_date):
     """Constructs and sends the beautifully designed email."""
-    # Get credentials from environment variables (how GitHub Actions provides secrets)
     sender_email = os.environ.get("SENDER_EMAIL")
     sender_password = os.environ.get("SENDER_APP_PASSWORD")
 
@@ -99,7 +100,6 @@ def send_email(recipients, found_papers, paper_date):
 
     subject = f"🗞️ Your Daily e-Paper Digest for {paper_date.strftime('%B %d, %Y')}"
     
-    # --- Redesigned HTML Email Body ---
     html_body = f"""
     <html>
     <head>
@@ -128,7 +128,7 @@ def send_email(recipients, found_papers, paper_date):
                 viewer_url = f"https://drive.google.com/file/d/{file_id}/view"
                 html_body += f'<a href="{viewer_url}" class="paper-item"><img src="{config["logo"]}" alt="{paper_name} Logo"></a>'
             except IndexError:
-                continue # Skip if link format is invalid
+                continue
 
     html_body += """
             </div>
@@ -137,10 +137,9 @@ def send_email(recipients, found_papers, paper_date):
     </html>
     """
 
-    # --- Sending Logic ---
     message = MIMEMultipart()
     message["From"] = sender_email
-    message["To"] = ", ".join(recipients) # Join list for email header
+    message["To"] = ", ".join(recipients)
     message["Subject"] = subject
     message.attach(MIMEText(html_body, "html"))
 
@@ -171,7 +170,6 @@ if __name__ == "__main__":
         print("\n❌ No newspapers found for today or yesterday. No email will be sent.")
     else:
         print("\n📬 Preparing to send email with found links...")
-        # The script gets the recipients from the environment variable
         recipients_str = os.environ.get("RECIPIENTS", "")
         recipients_list = [email.strip() for email in recipients_str.split(',') if email.strip()]
         
