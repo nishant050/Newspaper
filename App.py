@@ -20,19 +20,27 @@ st.set_page_config(
 @st.cache_resource
 def get_driver():
     """
-    Sets up and returns a Selenium WebDriver instance, cached for efficiency.
+    Sets up and returns a Selenium WebDriver instance for Chromium.
     """
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run headless
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
-    # This path is standard for chromedriver installed via packages.txt
+    # --- THIS IS THE NEW LINE ---
+    # Point to the chromium binary
+    chrome_options.binary_location = "/usr/bin/chromium" 
+    
+    # The driver path is usually the same
     service = Service(executable_path="/usr/bin/chromedriver")
     
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
+
+#
+# --- The rest of your code remains exactly the same ---
+#
 
 # --- Backend Function using Selenium ---
 def get_epaper_link_for_date(target_date, status_log):
@@ -49,7 +57,6 @@ def get_epaper_link_for_date(target_date, status_log):
         
         driver.get(page_url)
         
-        # Wait for the page and its anti-scraping JavaScript to fully load
         time.sleep(5) 
         
         html_content = driver.page_source
@@ -61,7 +68,6 @@ def get_epaper_link_for_date(target_date, status_log):
             driver.quit()
         return None
 
-    # The rest of the logic is the same
     soup = BeautifulSoup(html_content, 'lxml')
     paragraphs = soup.find_all('p', class_='has-text-align-center')
     for p in paragraphs:
