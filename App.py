@@ -31,7 +31,7 @@ if 'last_scrape_date' not in st.session_state:
     st.session_state.last_scrape_date = None
 
 # --- Selenium & Scraping Functions ---
-@st.cache_resource
+# The @st.cache_resource decorator has been removed to prevent race conditions.
 def create_driver():
     """Sets up and returns a new Selenium WebDriver instance."""
     chrome_options = Options()
@@ -47,7 +47,7 @@ def create_driver():
 
 def scrape_single_newspaper(newspaper_info, target_date):
     """Scrapes one newspaper URL. Note: This creates a new driver each time."""
-    # In a long-running app, you might re-use drivers, but for this structure, new is safer.
+    # Each thread will now get its own dedicated driver instance.
     driver = create_driver()
     name, url = newspaper_info["name"], newspaper_info["url"]
     date_str = target_date.strftime('%d-%m-%Y')
@@ -63,6 +63,7 @@ def scrape_single_newspaper(newspaper_info, target_date):
                 if link_tag and link_tag.has_attr('href'):
                     return name, link_tag['href']
     finally:
+        # This will now safely close only the driver for this specific thread.
         if driver:
             driver.quit()
     return name, None
