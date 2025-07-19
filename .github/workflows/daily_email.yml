@@ -1,0 +1,38 @@
+name: Daily e-Paper Email
+
+on:
+  workflow_dispatch: # Allows you to run it manually from the Actions tab
+  schedule:
+    # Runs at 02:30 UTC every day (which is 8:00 AM IST)
+    - cron: '30 2 * * *'
+
+jobs:
+  scrape-and-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium beautifulsoup4
+
+      - name: Run the scraping and email script
+        env:
+          # This securely uses the secrets you'll add to your GitHub repository
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_APP_PASSWORD: ${{ secrets.SENDER_APP_PASSWORD }}
+          RECIPIENTS: ${{ secrets.RECIPIENTS }}
+        run: python send_email_script.py
