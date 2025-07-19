@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- Selenium Setup for Streamlit Cloud ---
+# --- Selenium Setup ---
 @st.cache_resource
 def get_driver():
     chrome_options = Options()
@@ -31,7 +31,7 @@ def get_driver():
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
-# --- Backend Function using Selenium ---
+# --- Backend Function ---
 def get_epaper_link_for_date(target_date, status_log):
     driver = None
     try:
@@ -42,7 +42,6 @@ def get_epaper_link_for_date(target_date, status_log):
         status_log.write(f"🤖 Launching virtual browser for **{target_date.strftime('%B %d, %Y')}**...")
         
         driver.get(page_url)
-        
         time.sleep(5) 
         
         html_content = driver.page_source
@@ -54,7 +53,6 @@ def get_epaper_link_for_date(target_date, status_log):
             driver.quit()
         return None
 
-    # --- THIS IS THE CORRECTED LINE ---
     soup = BeautifulSoup(html_content, 'html.parser')
     
     paragraphs = soup.find_all('p', class_='has-text-align-center')
@@ -67,7 +65,6 @@ def get_epaper_link_for_date(target_date, status_log):
 
     status_log.write(f"🟡 Paper for **{target_date.strftime('%B %d, %Y')}** not found on the page.")
     return None
-
 
 # --- Main App ---
 st.title("📰 Hindustan Times e-Paper Finder")
@@ -90,20 +87,18 @@ with st.status("🚀 Initializing process...", expanded=True) as status:
             found_link = link
             found_date = yesterday
 
-# --- Redirect or Show Error ---
+# --- Display Button or Error ---
 if found_link:
     try:
         file_id = found_link.split('/d/')[1].split('/')[0]
         viewer_url = f"https://drive.google.com/file/d/{file_id}/view"
 
         st.success(f"✅ Success! Found the e-paper for **{found_date.strftime('%B %d, %Y')}**.")
-        st.info("Redirecting you to the newspaper now...")
-        time.sleep(2) 
+        st.info("Your browser's security requires a click to open the link.")
 
-        components.html(
-            f'<script>window.location.replace("{viewer_url}");</script>',
-            height=0
-        )
+        # This is the most reliable method.
+        st.link_button("📰 Open Newspaper in New Tab", viewer_url, use_container_width=True, type="primary")
+
     except IndexError:
         st.error("The link found was not a valid Google Drive link.")
 else:
