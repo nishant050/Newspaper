@@ -16,41 +16,25 @@ st.set_page_config(
     layout="centered"
 )
 
-# A list of all newspapers to be scraped. This makes the app easily extendable.
 NEWSPAPERS_TO_SCRAPE = [
-    {
-        "name": "Hindustan Times",
-        "url": "https://epaperwave.com/hindustan-times-epaper-pdf-today/"
-    },
-    {
-        "name": "The Times of India",
-        "url": "https://epaperwave.com/the-times-of-india-epaper-pdf-download/"
-    },
-    {
-        "name": "The Mint",
-        "url": "https://epaperwave.com/download-the-mint-epaper-pdf-for-free-today/"
-    },
-    {
-        "name": "Dainik Bhaskar",
-        "url": "https://epaperwave.com/dainik-bhaskar-epaper-today-pdf/"
-    },
-    {
-        "name": "Punjab Kesari",
-        "url": "https://epaperwave.com/free-punjab-kesari-epaper-pdf-download-now/"
-    }
+    {"name": "Hindustan Times", "url": "https://epaperwave.com/hindustan-times-epaper-pdf-today/"},
+    {"name": "The Times of India", "url": "https://epaperwave.com/the-times-of-india-epaper-pdf-download/"},
+    {"name": "The Mint", "url": "https://epaperwave.com/download-the-mint-epaper-pdf-for-free-today/"},
+    {"name": "Dainik Bhaskar", "url": "https://epaperwave.com/dainik-bhaskar-epaper-today-pdf/"},
+    {"name": "Punjab Kesari", "url": "https://epaperwave.com/free-punjab-kesari-epaper-pdf-download-now/"}
 ]
 
-# --- Session State Initialization (Caching) ---
-# This ensures that variables persist across reruns.
+# --- Session State Initialization ---
 if 'found_links' not in st.session_state:
     st.session_state.found_links = {}
 if 'last_scrape_date' not in st.session_state:
     st.session_state.last_scrape_date = None
 
 # --- Selenium Setup ---
-@st.cache_resource
-def get_driver():
-    """Sets up and caches a single Selenium WebDriver instance."""
+# FIX 1: The @st.cache_resource decorator has been REMOVED.
+# This function now creates a NEW driver instance every time it's called.
+def create_driver():
+    """Sets up and returns a new Selenium WebDriver instance."""
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
@@ -66,22 +50,19 @@ def get_driver():
 
 def scrape_single_newspaper(newspaper_info, target_date):
     """
-    Scrapes a single newspaper URL. Designed to be run in a separate thread.
-    Returns the newspaper name and the link if found, otherwise None.
+    Scrapes a single newspaper URL in its own private browser instance.
     """
-    driver = get_driver()
+    driver = create_driver()  # Each thread gets its own driver.
     name = newspaper_info["name"]
     url = newspaper_info["url"]
     date_str = target_date.strftime('%d-%m-%Y')
 
     try:
         driver.get(url)
-        # A short wait is sometimes needed for dynamic pages, but Selenium's get usually waits well.
-        time.sleep(3) 
+        time.sleep(3)
         html_content = driver.page_source
         soup = BeautifulSoup(html_content, 'html.parser')
 
-        # The site structure is consistent across the different newspaper pages
         paragraphs = soup.find_all('p', class_='has-text-align-center')
         for p in paragraphs:
             if p.get_text(strip=True).startswith(date_str):
@@ -89,8 +70,12 @@ def scrape_single_newspaper(newspaper_info, target_date):
                 if link_tag and link_tag.has_attr('href'):
                     return name, link_tag['href']
     except Exception:
-        # Silently fail for a single thread to not disrupt others
         return name, None
+    finally:
+        # FIX 2: Ensure the private browser instance for this thread is closed.
+        if driver:
+            driver.quit()
+            
     return name, None
 
 def find_all_newspapers(target_date, status_log):
@@ -99,10 +84,9 @@ def find_all_newspapers(target_date, status_log):
     """
     found_links = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(NEWSPAPERS_TO_SCRAPE)) as executor:
-        # Submit all scraping tasks to the thread pool
         future_to_newspaper = {executor.submit(scrape_single_newspaper, newspaper, target_date): newspaper for newspaper in NEWSPAPERS_TO_SCRAPE}
         
-        for i, future in enumerate(concurrent.futures.as_completed(future_to_newspaper)):
+        for future in concurrent.futures.as_completed(future_to_newspaper):
             try:
                 name, link = future.result()
                 if link:
@@ -111,7 +95,6 @@ def find_all_newspapers(target_date, status_log):
                 else:
                     status_log.write(f"🟡 Not found: {name}")
             except Exception:
-                # Log error for a specific newspaper if needed
                 status_log.write(f"❌ Error scraping one of the newspapers.")
     return found_links
 
@@ -121,13 +104,10 @@ st.title("🗞️ Daily e-Paper Hub")
 
 today = datetime.now().date()
 
-# Core Caching Logic: Only scrape if it's a new day.
 if st.session_state.last_scrape_date != today:
     with st.status("Finding all latest newspapers... This may take a moment.", expanded=True) as status:
-        # Try to find today's papers
         found_today = find_all_newspapers(today, status)
         
-        # If no papers found for today, try for yesterday as a fallback
         if not any(found_today.values()):
              status.write("---")
              status.write("No papers found for today. Checking for yesterday's papers...")
@@ -143,7 +123,6 @@ if st.session_state.last_scrape_date != today:
         status.update(label="Search complete!", state="complete", expanded=False)
 
 # --- Display Logic ---
-# This part runs every time, using the cached data from st.session_state.
 
 if not st.session_state.found_links:
     st.warning("Could not find any newspapers for today or yesterday.")
@@ -151,13 +130,11 @@ else:
     display_date = st.session_state.last_scrape_date
     st.success(f"Showing newspapers found for **{display_date.strftime('%B %d, %Y')}**.")
     
-    # Filter out newspapers that weren't found
     available_papers = {name: link for name, link in st.session_state.found_links.items() if link}
     
     if not available_papers:
          st.warning("Process completed, but no valid newspaper links were available.")
     else:
-        # Display buttons in a two-column layout for a cleaner look
         cols = st.columns(2)
         col_index = 0
         for name, link in sorted(available_papers.items()):
@@ -165,10 +142,8 @@ else:
                 file_id = link.split('/d/')[1].split('/')[0]
                 viewer_url = f"https://drive.google.com/file/d/{file_id}/view"
                 
-                # Place each button in the next available column
                 with cols[col_index % 2]:
                     st.link_button(f"📰 Open {name}", viewer_url, use_container_width=True)
                 col_index += 1
             except IndexError:
-                # Skip this link if it's not a valid Google Drive format
                 continue
