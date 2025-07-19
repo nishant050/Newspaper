@@ -1,4 +1,4 @@
-# streamlit_app.py
+# App.py
 
 import streamlit as st
 from selenium import webdriver
@@ -19,34 +19,20 @@ st.set_page_config(
 # --- Selenium Setup for Streamlit Cloud ---
 @st.cache_resource
 def get_driver():
-    """
-    Sets up and returns a Selenium WebDriver instance for Chromium.
-    """
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
-    
-    # --- THIS IS THE NEW LINE ---
-    # Point to the chromium binary
     chrome_options.binary_location = "/usr/bin/chromium" 
     
-    # The driver path is usually the same
     service = Service(executable_path="/usr/bin/chromedriver")
     
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
-#
-# --- The rest of your code remains exactly the same ---
-#
-
 # --- Backend Function using Selenium ---
 def get_epaper_link_for_date(target_date, status_log):
-    """
-    Fetches the epaper link by running a full browser instance with Selenium.
-    """
     driver = None
     try:
         driver = get_driver()
@@ -68,7 +54,9 @@ def get_epaper_link_for_date(target_date, status_log):
             driver.quit()
         return None
 
-    soup = BeautifulSoup(html_content, 'lxml')
+    # --- THIS IS THE CORRECTED LINE ---
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
     paragraphs = soup.find_all('p', class_='has-text-align-center')
     for p in paragraphs:
         if p.get_text(strip=True).startswith(target_date_str):
