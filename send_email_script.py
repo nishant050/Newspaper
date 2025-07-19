@@ -1,8 +1,9 @@
+
+
 import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -12,40 +13,34 @@ import time
 import concurrent.futures
 
 # --- Configuration ---
-# This section now has the correct URLs restored.
+
 NEWSPAPERS_CONFIG = [
     {
         "name": "Hindustan Times",
         "url": "https://epaperwave.com/hindustan-times-epaper-pdf-today/",
-        "logo_path": "assets/hindustan_times.png",
-        "logo_cid": "ht_logo"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Hindustan_Times_logo.svg"
     },
     {
         "name": "The Times of India",
         "url": "https://epaperwave.com/the-times-of-india-epaper-pdf-download/",
-        "logo_path": "assets/times_of_india.png",
-        "logo_cid": "toi_logo"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/7/7a/The_times_of_india.svg"
     },
     {
         "name": "The Mint",
         "url": "https://epaperwave.com/download-the-mint-epaper-pdf-for-free-today/",
-        "logo_path": "assets/the_mint.png",
-        "logo_cid": "mint_logo"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Mint_%28newspaper%29_logo.svg"
     },
     {
         "name": "Dainik Bhaskar",
         "url": "https://epaperwave.com/dainik-bhaskar-epaper-today-pdf/",
-        "logo_path": "assets/dainik_bhaskar.png",
-        "logo_cid": "db_logo"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/3/37/Dainik_Bhaskar_Logo.svg"
     },
     {
         "name": "Punjab Kesari",
         "url": "https://epaperwave.com/free-punjab-kesari-epaper-pdf-download-now/",
-        "logo_path": "assets/punjab_kesari.png",
-        "logo_cid": "pk_logo"
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/PKD2.jpg/330px-PKD2.jpg"
     }
 ]
-
 
 # --- Selenium & Scraping Functions ---
 def create_driver():
@@ -98,20 +93,13 @@ def send_email(recipients, found_papers, paper_date):
     """Constructs and sends the beautifully designed email."""
     sender_email = os.environ.get("SENDER_EMAIL")
     sender_password = os.environ.get("SENDER_APP_PASSWORD")
+
     if not sender_email or not sender_password:
-        print("❌ Email credentials not found.")
+        print("❌ Email credentials not found in environment variables.")
         return
 
     subject = f"🗞️ Your Daily e-Paper Digest for {paper_date.strftime('%B %d, %Y')}"
     
-    message = MIMEMultipart('related')
-    message["From"] = sender_email
-    message["To"] = ", ".join(recipients)
-    message["Subject"] = subject
-    
-    msg_alternative = MIMEMultipart('alternative')
-    message.attach(msg_alternative)
-
     html_body = f"""
     <html>
     <head>
@@ -120,24 +108,9 @@ def send_email(recipients, found_papers, paper_date):
             .container {{ max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
             .header {{ background-color: #d72938; color: white; padding: 20px; text-align: center; border-top-left-radius: 8px; border-top-right-radius: 8px; }}
             .header h1 {{ margin: 0; font-size: 28px; }}
-            .content {{ padding: 30px; display: flex; flex-wrap: wrap; justify-content: space-around; }}
-            .paper-item {{ text-decoration: none; margin-bottom: 25px; width: 45%; }}
-            .logo-container {{
-                height: 80px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                padding: 10px;
-                transition: box-shadow 0.2s;
-            }}
-            .logo-container:hover {{ box-shadow: 0 2px 8px rgba(0,0,0,0.15); }}
-            .logo-container img {{
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
-            }}
+            .content {{ padding: 30px; }}
+            .paper-item {{ display: block; text-decoration: none; margin-bottom: 20px; }}
+            .paper-item img {{ max-width: 200px; max-height: 50px; display: block; margin: 0 auto 10px auto; }}
         </style>
     </head>
     <body>
@@ -146,7 +119,6 @@ def send_email(recipients, found_papers, paper_date):
             <div class="content">
     """
 
-    image_attachments = {}
     for config in NEWSPAPERS_CONFIG:
         paper_name = config["name"]
         if paper_name in found_papers:
@@ -154,27 +126,23 @@ def send_email(recipients, found_papers, paper_date):
             try:
                 file_id = raw_link.split('/d/')[1].split('/')[0]
                 viewer_url = f"https://drive.google.com/file/d/{file_id}/view"
-                html_body += f'<a href="{viewer_url}" class="paper-item"><div class="logo-container"><img src="cid:{config["logo_cid"]}"></div></a>'
-                
-                with open(config["logo_path"], 'rb') as f:
-                    image_attachments[config["logo_cid"]] = f.read()
-            except (IndexError, FileNotFoundError):
+                html_body += f'<a href="{viewer_url}" class="paper-item"><img src="{config["logo"]}" alt="{paper_name} Logo"></a>'
+            except IndexError:
                 continue
-    
+
     html_body += """
             </div>
         </div>
     </body>
     </html>
     """
-    
-    msg_alternative.attach(MIMEText(html_body, 'html'))
 
-    for cid, img_data in image_attachments.items():
-        img = MIMEImage(img_data)
-        img.add_header('Content-ID', f'<{cid}>')
-        message.attach(img)
-        
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = ", ".join(recipients)
+    message["Subject"] = subject
+    message.attach(MIMEText(html_body, "html"))
+
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
@@ -188,7 +156,9 @@ def send_email(recipients, found_papers, paper_date):
 if __name__ == "__main__":
     print("🚀 Starting e-paper scraping process...")
     today = datetime.now().date()
+    
     found_links = find_all_newspapers(today)
+    
     display_date = today
     if not any(found_links.values()):
         print("\nNo papers found for today. Checking for yesterday's papers...")
@@ -202,6 +172,7 @@ if __name__ == "__main__":
         print("\n📬 Preparing to send email with found links...")
         recipients_str = os.environ.get("RECIPIENTS", "")
         recipients_list = [email.strip() for email in recipients_str.split(',') if email.strip()]
+        
         if recipients_list:
             send_email(recipients_list, found_links, display_date)
         else:
