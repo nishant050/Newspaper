@@ -18,27 +18,27 @@ NEWSPAPERS_CONFIG = [
     {
         "name": "Hindustan Times",
         "url": "https://epaperwave.com/hindustan-times-epaper-pdf-today/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Hindustan_Times_logo.svg"
+        "logo": "https://enterhindi.com/wp-content/uploads/2022/05/Hindustan-Times-Logo-PNG-03118.png"
     },
     {
         "name": "The Times of India",
         "url": "https://epaperwave.com/the-times-of-india-epaper-pdf-download/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/7/7a/The_times_of_india.svg"
+        "logo": "https://logodix.com/logo/1113859.jpg"
     },
     {
         "name": "The Mint",
         "url": "https://epaperwave.com/download-the-mint-epaper-pdf-for-free-today/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Mint_%28newspaper%29_logo.svg"
+        "logo": "https://logowik.com/content/uploads/images/mint-magazine8794.jpg"
     },
     {
         "name": "Dainik Bhaskar",
         "url": "https://epaperwave.com/dainik-bhaskar-epaper-today-pdf/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/3/37/Dainik_Bhaskar_Logo.svg"
+        "logo": "https://e7.pngegg.com/pngimages/875/764/png-clipart-jabalpur-dainik-bhaskar-newspaper-d-b-corp-ltd-divya-bhaskar-others-text-logo.png"
     },
     {
         "name": "Punjab Kesari",
         "url": "https://epaperwave.com/free-punjab-kesari-epaper-pdf-download-now/",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/PKD2.jpg/330px-PKD2.jpg"
+        "logo": "https://i0.wp.com/www.enterhindi.com/wp-content/uploads/2022/05/Punjab-Kesari-Logo.png"
     }
 ]
 
