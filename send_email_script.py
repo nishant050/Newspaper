@@ -2,7 +2,7 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage  # <-- New import for embedding images
+from email.mime.image import MIMEImage
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -12,17 +12,44 @@ import time
 import concurrent.futures
 
 # --- Configuration ---
-# Now includes the local path and a unique ID for each logo
+# This section now has the correct URLs restored.
 NEWSPAPERS_CONFIG = [
-    {"name": "Hindustan Times", "url": "...", "logo_path": "assets/hindustan_times.png", "logo_cid": "ht_logo"},
-    {"name": "The Times of India", "url": "...", "logo_path": "assets/times_of_india.png", "logo_cid": "toi_logo"},
-    {"name": "The Mint", "url": "...", "logo_path": "assets/the_mint.png", "logo_cid": "mint_logo"},
-    {"name": "Dainik Bhaskar", "url": "...", "logo_path": "assets/dainik_bhaskar.png", "logo_cid": "db_logo"},
-    {"name": "Punjab Kesari", "url": "...", "logo_path": "assets/punjab_kesari.png", "logo_cid": "pk_logo"}
+    {
+        "name": "Hindustan Times",
+        "url": "https://epaperwave.com/hindustan-times-epaper-pdf-today/",
+        "logo_path": "assets/hindustan_times.png",
+        "logo_cid": "ht_logo"
+    },
+    {
+        "name": "The Times of India",
+        "url": "https://epaperwave.com/the-times-of-india-epaper-pdf-download/",
+        "logo_path": "assets/times_of_india.png",
+        "logo_cid": "toi_logo"
+    },
+    {
+        "name": "The Mint",
+        "url": "https://epaperwave.com/download-the-mint-epaper-pdf-for-free-today/",
+        "logo_path": "assets/the_mint.png",
+        "logo_cid": "mint_logo"
+    },
+    {
+        "name": "Dainik Bhaskar",
+        "url": "https://epaperwave.com/dainik-bhaskar-epaper-today-pdf/",
+        "logo_path": "assets/dainik_bhaskar.png",
+        "logo_cid": "db_logo"
+    },
+    {
+        "name": "Punjab Kesari",
+        "url": "https://epaperwave.com/free-punjab-kesari-epaper-pdf-download-now/",
+        "logo_path": "assets/punjab_kesari.png",
+        "logo_cid": "pk_logo"
+    }
 ]
 
-# --- Selenium & Scraping Functions (No Changes Here) ---
+
+# --- Selenium & Scraping Functions ---
 def create_driver():
+    """Sets up a new Selenium WebDriver instance for Chromium."""
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
@@ -33,6 +60,7 @@ def create_driver():
     return webdriver.Chrome(service=service, options=chrome_options)
 
 def scrape_single_newspaper(newspaper_info, target_date):
+    """Scrapes one newspaper URL in its own private browser."""
     driver = create_driver()
     name, url = newspaper_info["name"], newspaper_info["url"]
     date_str = target_date.strftime('%d-%m-%Y')
@@ -52,6 +80,7 @@ def scrape_single_newspaper(newspaper_info, target_date):
     return name, None
 
 def find_all_newspapers(target_date):
+    """Uses a thread pool to scrape all newspapers concurrently."""
     found_papers = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(NEWSPAPERS_CONFIG)) as executor:
         future_to_newspaper = {executor.submit(scrape_single_newspaper, newspaper, target_date): newspaper for newspaper in NEWSPAPERS_CONFIG}
@@ -64,8 +93,9 @@ def find_all_newspapers(target_date):
                 print(f"🟡 Not found: {name}")
     return found_papers
 
-# --- Heavily Updated Email Function ---
+# --- Email Function ---
 def send_email(recipients, found_papers, paper_date):
+    """Constructs and sends the beautifully designed email."""
     sender_email = os.environ.get("SENDER_EMAIL")
     sender_password = os.environ.get("SENDER_APP_PASSWORD")
     if not sender_email or not sender_password:
@@ -74,17 +104,14 @@ def send_email(recipients, found_papers, paper_date):
 
     subject = f"🗞️ Your Daily e-Paper Digest for {paper_date.strftime('%B %d, %Y')}"
     
-    # Create the root message and make it a "related" type to hold the HTML and images
     message = MIMEMultipart('related')
     message["From"] = sender_email
     message["To"] = ", ".join(recipients)
     message["Subject"] = subject
     
-    # Create a container for the HTML part of the email
     msg_alternative = MIMEMultipart('alternative')
     message.attach(msg_alternative)
 
-    # --- New, Improved HTML Body ---
     html_body = f"""
     <html>
     <head>
@@ -96,7 +123,7 @@ def send_email(recipients, found_papers, paper_date):
             .content {{ padding: 30px; display: flex; flex-wrap: wrap; justify-content: space-around; }}
             .paper-item {{ text-decoration: none; margin-bottom: 25px; width: 45%; }}
             .logo-container {{
-                height: 80px; /* Fixed height for all logo containers */
+                height: 80px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -109,7 +136,7 @@ def send_email(recipients, found_papers, paper_date):
             .logo-container img {{
                 max-width: 100%;
                 max-height: 100%;
-                object-fit: contain; /* This ensures logos fit nicely without distortion */
+                object-fit: contain;
             }}
         </style>
     </head>
@@ -119,20 +146,16 @@ def send_email(recipients, found_papers, paper_date):
             <div class="content">
     """
 
-    # --- Attach and Embed Images ---
     image_attachments = {}
     for config in NEWSPAPERS_CONFIG:
         paper_name = config["name"]
         if paper_name in found_papers:
-            # Build the HTML for this paper's link
             raw_link = found_papers[paper_name]
             try:
                 file_id = raw_link.split('/d/')[1].split('/')[0]
                 viewer_url = f"https://drive.google.com/file/d/{file_id}/view"
-                # The src points to the unique 'cid' for the embedded image
                 html_body += f'<a href="{viewer_url}" class="paper-item"><div class="logo-container"><img src="cid:{config["logo_cid"]}"></div></a>'
                 
-                # Store the image data to be attached later
                 with open(config["logo_path"], 'rb') as f:
                     image_attachments[config["logo_cid"]] = f.read()
             except (IndexError, FileNotFoundError):
@@ -145,16 +168,13 @@ def send_email(recipients, found_papers, paper_date):
     </html>
     """
     
-    # Attach the HTML part to the email
     msg_alternative.attach(MIMEText(html_body, 'html'))
 
-    # Attach all the collected image data as separate parts
     for cid, img_data in image_attachments.items():
         img = MIMEImage(img_data)
         img.add_header('Content-ID', f'<{cid}>')
         message.attach(img)
         
-    # --- Sending Logic ---
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
@@ -164,7 +184,7 @@ def send_email(recipients, found_papers, paper_date):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
 
-# --- Main Execution Block (No Changes Here) ---
+# --- Main Execution Block ---
 if __name__ == "__main__":
     print("🚀 Starting e-paper scraping process...")
     today = datetime.now().date()
